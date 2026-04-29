@@ -115,7 +115,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei
 <div class="toast" id="toast"></div>
 
 <script>
-(function(){
 'use strict';
 var curU=null,curTab='home',editId=null,rptType='day',rptMonth='';
 var fType='expense',fCat='',fDate='',fAcc='',fAmt='';
@@ -213,7 +212,6 @@ function doDelRecInForm(){try{if(!editId)return;if(!confirm('确认删除？'))r
 var lp=getItem('et_lastUser');
 if(lp){var us=getUsers();var u=us.find(function(x){return x.phone===lp});if(u){curU=u;renderApp()}else{renderLogin()}}
 else{renderLogin()}
-})();
 </script>
 </body>
 </html>
