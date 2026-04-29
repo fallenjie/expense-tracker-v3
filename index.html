@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>记账本 V3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--green:#2D5A27;--yellow:#E8A838;--orange:#f5a623;--red:#D64545;--bg:#f5f5f0;--card:#fff;--text:#333;--sub:#888;--border:#e0e0e0}
+body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;padding-bottom:70px;user-select:none}
+.app{display:none}.app.active{display:block}
+.tab-bar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:#fff;border-top:1px solid var(--border);display:flex;z-index:100;padding:5px 0 env(safe-area-inset-bottom,0)}
+.tab-btn{flex:1;text-align:center;padding:5px 0;cursor:pointer;color:var(--sub);font-size:11px}
+.tab-btn .ic{font-size:22px;display:block;margin-bottom:1px}
+.tab-btn.active{color:var(--green);font-weight:600}
+.page{display:none;padding:10px 14px}.page.active{display:block}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.sc-row{display:flex;gap:8px;margin-bottom:10px}
+.sc{flex:1;background:var(--card);border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.sc.inc{border-left:4px solid var(--green)}.sc.exp{border-left:4px solid var(--red)}
+.sc-lbl{font-size:11px;color:var(--sub);margin-bottom:3px}
+.sc-val{font-size:18px;font-weight:bold}.sc-val.inc{color:var(--green)}.sc-val.exp{color:var(--red)}
+.bd-card{background:var(--card);border-radius:12px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);margin-bottom:10px}
+.bd-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px}
+.bd-bar{height:10px;background:#eee;border-radius:5px;overflow:hidden}
+.bd-fill{height:100%;border-radius:5px;transition:width .4s}
+.bd-pct{font-size:12px;text-align:right;margin-top:4px}
+.rec-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.rec-row:last-child{border-bottom:none}.rec-row:active{background:#f9f9f7}
+.rec-ic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;margin-right:10px;flex-shrink:0}
+.rec-mid{flex:1;min-width:0}.rec-mid .cat{font-size:14px;font-weight:500}
+.rec-mid .sub{font-size:11px;color:var(--sub);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-right{text-align:right;flex-shrink:0;margin-left:8px}
+.rec-amt{font-size:15px;font-weight:bold}.rec-amt.inc{color:var(--green)}.rec-amt.exp{color:var(--red)}
+.rec-date{font-size:11px;color:var(--sub)}.rec-del{font-size:11px;color:var(--red);margin-top:2px;cursor:pointer}
+.empty{text-align:center;padding:40px 0;color:var(--sub)}.empty .eicon{font-size:44px;margin-bottom:8px}.empty p{font-size:13px}
+.sbox{display:flex;gap:8px;margin-bottom:10px}
+.sbox input{flex:1;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none}
+.sbox input:focus{border-color:var(--green)}
+.f-row{display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;white-space:nowrap}
+.chip{padding:4px 10px;border-radius:14px;font-size:11px;background:#eee;cursor:pointer;white-space:nowrap;border:1px solid transparent}
+.chip.on{background:var(--green);color:#fff}
+.sub-row{display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px;white-space:nowrap}
+.schip{padding:4px 10px;border-radius:12px;font-size:11px;background:#f0f0ee;cursor:pointer;white-space:nowrap;border:1px solid transparent}
+.schip.on{border-color:var(--green);color:var(--green);background:#f0f7f0}
+.rpt-tog{display:flex;background:#eee;border-radius:8px;padding:2px;margin-bottom:12px}
+.tog-btn{flex:1;text-align:center;padding:7px;font-size:13px;border-radius:6px;cursor:pointer;color:var(--sub)}
+.tog-btn.on{background:#fff;color:var(--green);font-weight:bold;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.pie-row{display:flex;gap:8px}
+.pie-col{flex:1;background:var(--card);border-radius:12px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.pie-lbl{font-size:12px;color:var(--sub);margin-bottom:6px}
+.pie-can{width:110px;height:110px;border-radius:50%;margin:0 auto;position:relative}
+.pie-hole{position:absolute;inset:26px;background:var(--card);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold}
+.pie-leg{font-size:10px;margin-top:6px;text-align:left;max-height:120px;overflow-y:auto}
+.leg-it{display:flex;align-items:center;gap:4px;padding:1px 0}
+.leg-d{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.leg-n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.leg-v{color:var(--sub);flex-shrink:0}
+.set-item{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #f0f0f0;cursor:pointer}
+.set-item:last-child{border-bottom:none}.set-item:active{background:#f9f9f7}
+.si-l{display:flex;align-items:center;gap:10px}.si-ic{font-size:18px}.si-tx{font-size:14px}.si-arr{color:var(--sub)}
+.acc-row{display:flex;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.acc-row:last-child{border-bottom:none}
+.acc-ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-right:10px;flex-shrink:0}
+.acc-mid{flex:1}.acc-name{font-size:14px;font-weight:500}.acc-bal{font-size:11px;color:var(--sub)}
+.acc-ed{color:var(--green);font-size:12px;cursor:pointer;padding:4px 6px}
+.acc-dl{color:var(--red);font-size:12px;cursor:pointer;padding:4px 6px}
+.fab{position:fixed;bottom:72px;right:calc(50% - 195px);width:48px;height:48px;background:var(--green);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;box-shadow:0 3px 10px rgba(45,90,39,.35);z-index:99}
+.fab:active{transform:scale(.92)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.modal.show{display:flex}
+.modal>div{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:430px;max-height:90vh;overflow-y:auto;padding:16px 16px max(16px,env(safe-area-inset-bottom))}
+.m-hd{text-align:center;font-size:16px;font-weight:bold;margin-bottom:12px;position:relative}
+.fg{margin-bottom:12px}.fg>label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
+.fg>input,.fg>select{width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:#fafafa}
+.fg>input:focus,.fg>select:focus{border-color:var(--green);background:#fff}
+.ty-row{display:flex;background:#eee;border-radius:8px;padding:2px;margin-bottom:12px}
+.ty-btn{flex:1;text-align:center;padding:8px;font-size:13px;border-radius:6px;cursor:pointer;color:var(--sub)}
+.ty-btn.ex-sel{background:var(--red);color:#fff}.ty-btn.in-sel{background:var(--green);color:#fff}
+.amt-wrap{display:flex;align-items:center;gap:6px}.amt-wrap input{flex:1}
+.qbtns{display:flex;gap:4px;flex-shrink:0}
+.qbtn{padding:6px 9px;border:1px solid var(--border);border-radius:6px;background:#f5f5f0;font-size:11px;cursor:pointer}
+.cat-m{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}
+.ci{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:10px;border:2px solid transparent;cursor:pointer;font-size:10px;gap:2px;background:#f9f9f7}
+.ci.sel{border-color:var(--green);background:#f0f7f0}.ci .ci-ic{font-size:20px}
+.ci .ci-nm{font-size:9px;text-align:center;overflow:hidden;width:100%}.ci.add{background:#f0f0ee;color:var(--sub)}
+.ci:active{transform:scale(.92)}
+.recent-r{display:flex;gap:6px;overflow-x:auto;margin-bottom:10px;padding-bottom:2px}
+.rc-it{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;cursor:pointer;min-width:56px;flex-shrink:0;font-size:10px}
+.rc-it .rc-ic{font-size:18px}
+.btn-save{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:15px;cursor:pointer}
+.btn-save:active{opacity:.85}.btn-save.danger{background:var(--red);margin-top:6px}
+.auth-wrap{padding:40px 20px;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.auth-box{background:var(--card);border-radius:16px;padding:30px 24px;width:100%;max-width:340px;box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.auth-logo{text-align:center;font-size:40px;margin-bottom:8px}
+.auth-tit{text-align:center;font-size:20px;font-weight:bold;color:var(--green);margin-bottom:24px}
+.auth-box input{width:100%;padding:11px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;margin-bottom:12px;background:#fafafa}
+.auth-box input:focus{border-color:var(--green);background:#fff}
+.auth-btn{width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer}
+.auth-btn:active{opacity:.85}.auth-link{text-align:center;margin-top:12px;font-size:13px;color:var(--green);cursor:pointer}
+.bd-form{display:flex;gap:8px;align-items:center}
+.bd-form input{flex:1;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none}
+.bd-form input:focus{border-color:var(--green)}.bd-save{padding:9px 16px;background:var(--green);color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer}
+.date-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.dchip{padding:4px 9px;border-radius:12px;font-size:11px;background:#eee;cursor:pointer}
+.dchip.on{background:var(--green);color:#fff}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-70px);background:#333;color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;z-index:300;pointer-events:none;transition:transform .3s}
+.toast.show{transform:translateX(-50%) translateY(0)}
+::-webkit-scrollbar{width:0}
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+var curU=null,curTab='home',editId=null,rptType='day';
+var fType='expense',fCat='',fDate='',fAcc='',fAmt='';
+var bSearch='',bDate='',bCat='',bAcc='';
+var editAcc=null;
+
+function P(id){try{return document.getElementById(id)}catch(e){return null}}
+function fmtM(){try{var d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')}catch(e){return''}}
+function fmtD(d){try{var x=new Date(d);return x.getFullYear()+'-'+(x.getMonth()+1).toString().padStart(2,'0')+'-'+x.getDate().toString().padStart(2,'0')}catch(e){return''}}
+function fmtY(v){return (v||0).toFixed(2)}
+function uid(){try{return Date.now().toString(36)+Math.random().toString(36).substring(2,11)}catch(e){return Date.now().toString()}}
+function es(s){try{return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}catch(e){return''}}
+var _tt=null;
+function toast(m){try{var t=P('toast');t.textContent=m;t.classList.add('show');clearTimeout(_tt);_tt=setTimeout(function(){t.classList.remove('show')},2000)}catch(e){}}
+
+function getItem(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null}catch(e){return null}}
+function setItem(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function getUsers(){try{return getItem('et_users')||[]}catch(e){return[]}}
+function setUsers(v){try{setItem('et_users',v)}catch(e){}}
+function getRecords(){try{return getItem('et_records')||[]}catch(e){return[]}}
+function saveRecord(r){try{var rs=getRecords();var i=rs.findIndex(function(x){return x.id===r.id});if(i>=0)rs[i]=r;else rs.unshift(r);setItem('et_records',rs)}catch(e){}}
+function deleteRecord(id){try{var rs=getRecords();setItem('et_records',rs.filter(function(x){return x.id!==id}))}catch(e){}}
+function getAccounts(){try{return getItem('et_accounts')||[]}catch(e){return[]}}
+function saveAccount(a){try{var as=getAccounts();var i=as.findIndex(function(x){return x.id===a.id});if(i>=0)as[i]=a;else as.push(a);setItem('et_accounts',as)}catch(e){}}
+function deleteAccount(id){try{var as=getAccounts();setItem('et_accounts',as.filter(function(x){return x.id!==id}))}catch(e){}}
+function getCats(){try{return getItem('et_cats')||[]}catch(e){return[]}}
+function saveCat(c){try{var cs=getCats();var i=cs.findIndex(function(x){return x.id===c.id});if(i>=0)cs[i]=c;else cs.push(c);setItem('et_cats',cs)}catch(e){}}
+function deleteCat(id){try{var cs=getCats();setItem('et_cats',cs.filter(function(x){return x.id!==id}))}catch(e){}}
+function getBudget(){try{return getItem('et_budget')||[]}catch(e){return[]}}
+function saveBudget(b){try{var bs=getBudget();var i=bs.findIndex(function(x){return x.user===b.user});if(i>=0)bs[i]=b;else bs.push(b);setItem('et_budget',bs)}catch(e){}}
+function getAlerted(){try{return getItem('et_alerted')||{}}catch(e){return{}}}
+function setAlerted(m){try{var a=getAlerted();a[m]=true;setItem('et_alerted',a)}catch(e){}}
+function getLastUsed(){try{return getItem('et_lastUsed')||[]}catch(e){return[]}}
+function setLastUsed(cid){try{var lu=getLastUsed();lu=lu.filter(function(x){return x!==cid});lu.unshift(cid);if(lu.length>8)lu.pop();setItem('et_lastUsed',lu)}catch(e){}}
+function catById(id){try{return getCats().find(function(c){return c.id===id})}catch(e){return null}}
+function accById(id){try{return getAccounts().find(function(a){return a.id===id})}catch(e){return null}}
+function myRecs(){try{return getRecords().filter(function(r){return r.user===curU.id})}catch(e){return[]}}
+function accBal(accId){try{var rs=getRecords().filter(function(r){return r.user===curU.id&&r.account===accId});var inc=rs.filter(function(r){return r.type==='income'}).reduce(function(s,r){return s+Number(r.amount)},0);var exp=rs.filter(function(r){return r.type==='expense'}).reduce(function(s,r){return s+Number(r.amount)},0);return inc-exp}catch(e){return 0}}
+function bds(pct){if(pct>100)return'#D64545';if(pct>=80)return'#f5a623';if(pct>=60)return'#E8A838';return'#2D5A27'}
+
+function initDefs(){try{if(getCats().length===0){setItem('et_cats',[{id:'c001',name:'餐饮',emoji:'🍜',type:'expense',isCustom:false},{id:'c002',name:'交通',emoji:'🚗',type:'expense',isCustom:false},{id:'c003',name:'购物',emoji:'🛍',type:'expense',isCustom:false},{id:'c004',name:'娱乐',emoji:'🎮',type:'expense',isCustom:false},{id:'c005',name:'医疗',emoji:'💊',type:'expense',isCustom:false},{id:'c006',name:'教育',emoji:'📚',type:'expense',isCustom:false},{id:'c007',name:'居住',emoji:'🏠',type:'expense',isCustom:false},{id:'c008',name:'通讯',emoji:'📱',type:'expense',isCustom:false},{id:'c101',name:'工资',emoji:'💰',type:'income',isCustom:false},{id:'c102',name:'奖金',emoji:'🎁',type:'income',isCustom:false},{id:'c103',name:'理财',emoji:'📈',type:'income',isCustom:false},{id:'c104',name:'其他',emoji:'💵',type:'income',isCustom:false}])}if(getAccounts().length===0){setItem('et_accounts',[{id:'a001',name:'现金',icon:'💰',color:'#888'},{id:'a002',name:'支付宝',icon:'💳',color:'#1677ff'},{id:'a003',name:'微信支付',icon:'💳',color:'#07c160'},{id:'a004',name:'银行卡',icon:'🏦',color:'#999'}])}}catch(e){}}
+
+function renderLogin(){try{var lp=getItem('et_lastUser')||'';var h='<div class="auth-wrap"><div class="auth-box"><div class="auth-logo">💰</div><div class="auth-tit">记账本 V3</div><input type="tel" id="loginPhone" placeholder="手机号" maxlength="11" value="'+es(lp)+'" autocomplete="off"><input type="password" id="loginPwd" placeholder="密码（6位以上）" maxlength="20" autocomplete="off"><button class="auth-btn" onclick="doLogin()">登录</button><div class="auth-link" onclick="doRegister()">没有账号？点击注册</div></div></div>';P('app').innerHTML=h;P('app').className='app active'}catch(e){}}
+function doLogin(){try{var ph=P('loginPhone').value.trim(),pw=P('loginPwd').value;if(!ph||!pw){toast('请输入手机号和密码');return}var users=getUsers();var u=users.find(function(x){return x.phone===ph&&x.password===pw});if(!u){toast('手机号或密码错误');return}curU=u;setItem('et_lastUser',ph);renderApp()}catch(e){toast('登录失败')}}
+function doRegister(){try{var ph=P('loginPhone').value.trim(),pw=P('loginPwd').value;if(!ph||!pw){toast('请输入手机号和密码');return}if(pw.length<6){toast('密码至少6位');return}var users=getUsers();if(users.find(function(x){return x.phone===ph})){toast('该手机号已注册');return}var u={id:uid(),phone:ph,password:pw,created:Date.now()};users.push(u);setUsers(users);curU=u;setItem('et_lastUser',ph);renderApp()}catch(e){toast('注册失败')}}
+
+function renderApp(){try{initDefs();var h='<div class="tab-bar">';h+=tabBtn('home','🏠','首页');h+=tabBtn('bills','📋','账单');h+=tabBtn('report','📊','报表');h+=tabBtn('my','👤','我的');h+='</div>';h+='<div class="page'+(curTab==='home'?' active':'')+'" id="pg-home"></div>';h+='<div class="page'+(curTab==='bills'?' active':'')+'" id="pg-bills"></div>';h+='<div class="page'+(curTab==='report'?' active':'')+'" id="pg-report"></div>';h+='<div class="page'+(curTab==='my'?' active':'')+'" id="pg-my"></div>';h+='<div class="fab" id="fab" onclick="openRecForm()">+</div>';P('app').innerHTML=h;P('app').className='app active';renderHome();renderBills();renderReport();renderMy()}catch(e){}}
+function tabBtn(t,ic,lb){return'<div class="tab-btn'+(curTab===t?' active':'')+'" onclick="switchTab(\''+t+'\')"><span class="ic">'+ic+'</span>'+lb+'</div>'}
+
+function switchTab(t){try{curTab=t;document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});var pg=P('pg-'+t);if(pg)pg.classList.add('active');document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});var btns=document.querySelectorAll('.tab-btn');var ts=['home','bills','report','my'];var i=ts.indexOf(t);if(i>=0&&btns[i])btns[i].classList.add('active');var f=P('fab');if(f)f.style.display=(t==='my')?'none':'flex';if(t==='home')renderHome();if(t==='bills')renderBills();if(t==='report')renderReport();if(t==='my')renderMy()}catch(e){}}
+function refreshAll(){try{renderHome();renderBills();renderReport();renderMy()}catch(e){}}
+
+function renderHome(){try{var mon=fmtM();var recs=myRecs().filter(function(r){return r.date&&r.date.substring(0,7)===mon});var inc=recs.filter(function(r){return r.type==='income'}).reduce(function(s,r){return s+Number(r.amount)},0);var exp=recs.filter(function(r){return r.type==='expense'}).reduce(function(s,r){return s+Number(r.amount)},0);var bud=getBudget().find(function(b){return b.user===curU.id});var bAmt=bud?Number(bud.amount):0;var pct=bAmt>0?Math.round(exp/bAmt*100):0;var color=bds(pct);var h='<div class="sc-row"><div class="sc inc"><div class="sc-lbl">本月收入</div><div class="sc-val inc">+'+fmtY(inc)+'</div></div><div class="sc exp"><div class="sc-lbl">本月支出</div><div class="sc-val exp">-'+fmtY(exp)+'</div></div></div>';if(bAmt>0){var left=bAmt-exp;var lv=left>=0?'剩余 ¥'+fmtY(left):'超支 ¥'+fmtY(-left);h+='<div class="bd-card"><div class="bd-row"><span>已花 ¥'+fmtY(exp)+'</span><span>预算 ¥'+fmtY(bAmt)+'</span></div><div class="bd-bar"><div class="bd-fill" style="width:'+Math.min(pct,100)+'%;background:'+color+'"></div></div><div class="bd-pct" style="color:'+color+'">'+pct+'% '+lv+'</div></div>'}var recent=myRecs().sort(function(a,b){return(b.created||0)-(a.created||0)}).slice(0,5);h+='<div class="card"><div style="font-size:12px;color:var(--sub);margin-bottom:6px">最近记录</div>';if(recent.length===0){h+='<div class="empty"><p style="font-size:13px">暂无记录，点击右下角 + 记一笔</p></div>'}else{recent.forEach(function(r){h+=recHtml(r)})}h+='</div>';P('pg-home').innerHTML=h}catch(e){P('pg-home').innerHTML='<div class="empty"><p>加载失败</p></div>'}}
+function recHtml(r,del){try{var c=catById(r.category);var ce=c?c.emoji:'📝';var cn=c?c.name:(r.category||'未知');var s=r.type==='income'?'+':'-';var cl=r.type==='income'?'inc':'exp';var a=accById(r.account);var asn=a?(a.icon+' '+a.name):'';var h='<div class="rec-row"'+(del?'':' onclick="openRecForm(\''+r.id+'\')"')+'><div class="rec-ic" style="background:'+(r.type==='income'?'#e8f5e9':'#ffebee')+'">'+ce+'</div><div class="rec-mid"><div class="cat">'+cn+'</div><div class="sub">'+(r.note||'')+(asn?' · '+asn:'')+'</div></div><div class="rec-right"><div class="rec-amt '+cl+'">'+s+r.amount+'</div><div class="rec-date">'+r.date+'</div></div></div>';return h}catch(e){return''}}
+
+function renderBills(){try{var now=new Date();var today=fmtD(now);var sw=new Date(now);sw.setDate(now.getDate()-now.getDay());var mon=fmtM();var recs=myRecs().filter(function(r){if(bDate==='today'&&r.date!==today)return false;if(bDate==='week'){var rd=new Date(r.date);if(rd<sw)return false}if(bDate==='month'&&r.date.substring(0,7)!==mon)return false;if(bCat&&r.category!==bCat)return false;if(bAcc&&r.account!==bAcc)return false;if(bSearch){var c=catById(r.category);var cn=c?c.name:'';if(!(r.note||'').includes(bSearch)&&!cn.includes(bSearch)&&!(r.amount||'').includes(bSearch))return false}return true}).sort(function(a,b){return(b.created||0)-(a.created||0)});var h='<div class="sbox"><input type="text" placeholder="搜索备注/分类" value="'+es(bSearch)+'" oninput="bSearch=this.value;renderBills()"></div>';h+='<div class="f-row">';h+=chip('全部','',bDate==='');h+=chip('今天','today',bDate==='today');h+=chip('本周','week',bDate==='week');h+=chip('本月','month',bDate==='month');h+='</div>';h+='<div class="sub-row">';h+=schip('全部分类','',bCat==='');getCats().forEach(function(c){h+=schip(c.emoji+' '+c.name,c.id,bCat===c.id)});h+='</div>';h+='<div class="sub-row">';h+=schip('全部账户','',bAcc==='');getAccounts().forEach(function(a){h+=schip(a.icon+' '+a.name,a.id,bAcc===a.id)});h+='</div>';if(recs.length===0){h+='<div class="empty"><div class="eicon">📋</div><p>暂无记录</p></div>'}else{recs.forEach(function(r){h+='<div class="card" style="padding:10px 14px;margin-bottom:6px">'+recHtml(r,false)+'<div style="text-align:right;margin-top:4px"><span class="rec-del" onclick="delRec(\''+r.id+'\')">🗑 删除</span></div></div>'})}P('pg-bills').innerHTML=h}catch(e){P('pg-bills').innerHTML='<div class="empty"><p>加载失败</p></div>'}}
+function chip(label,val,on){return'<div class="chip'+(on?' on':'')+'" onclick="bDate=\''+val+'\';renderBills()">'+label+'</div>'}
+function schip(label,val,on){return'<div class="schip'+(on?' on':'')+'" onclick="bCat=\''+val+'\';bAcc=\'\';renderBills()">'+label+'</div>'}
+function delRec(id){try{if(!confirm('确认删除？'))return;deleteRecord(id);refreshAll();toast('已删除')}catch(e){}}
+
+var PCLR=['#2D5A27','#E8A838','#D64545','#1677ff','#07c160','#f5a623','#7c3aed','#ec4899','#0ea5e9','#84cc16','#f97316','#06b6d4'];
+function drawConic(elId,recs,type){try{var el=P(elId);if(!el)return;var fil=recs.filter(function(r){return r.type===type});if(!fil.length){el.innerHTML='<div style="width:110px;height:110px;border-radius:50%;background:#eee;margin:0 auto"></div><div style="font-size:11px;color:var(--sub);margin-top:4px">暂无数据</div>';return}var g={};fil.forEach(function(r){var k=r.category||'_n_';g[k]=(g[k]||0)+Number(r.amount)});var ets=[];Object.keys(g).forEach(function(k){ets.push({cid:k,amt:g[k]})});ets.sort(function(a,b){return b.amt-a.amt});var tot=ets.reduce(function(s,e){return s+e.amt},0);var grads=[];var a=0;ets.forEach(function(e,i){var deg=e.amt/tot*360;grads.push(PCLR[i%PCLR.length]+' '+a.toFixed(2)+'deg '+(a+deg).toFixed(2)+'deg');a+=deg});var h='<div class="pie-can" style="background:conic-gradient('+grads.join(',')+')"><div class="pie-hole">¥'+Math.round(tot)+'</div></div>';h+='<div style="font-size:11px;color:var(--sub);margin-top:4px">合计 ¥'+fmtY(tot)+'</div><div class="pie-leg">';ets.forEach(function(e,i){var c=catById(e.cid);var n=c?c.name:(e.cid||'未知');var p=tot>0?(e.amt/tot*100).toFixed(1):'0';h+='<div class="leg-it"><span class="leg-d" style="background:'+PCLR[i%PCLR.length]+'"></span><span class="leg-n">'+n+'</span><span class="leg-v">'+p+'%</span></div>'});h+='</div>';el.innerHTML=h}catch(e){try{var x=P(elId);if(x)x.innerHTML=''}catch(e2){}}}
+
+function renderReport(){try{var now=new Date();var today=fmtD(now);var mon=fmtM();var h='<div class="rpt-tog"><div class="tog-btn'+(rptType==='day'?' on':'')+'" onclick="rptType=\'day\';renderReport()">日报</div><div class="tog-btn'+(rptType==='month'?' on':'')+'" onclick="rptType=\'month\';renderReport()">月报</div></div>';var fil=myRecs();var lb;if(rptType==='day'){fil=fil.filter(function(r){return r.date===today});lb=today}else{fil=fil.filter(function(r){return r.date&&r.date.startsWith(mon)});lb=mon}h+='<div class="pie-row"><div class="pie-col"><div class="pie-lbl">支出分布 ('+lb+')</div><div id="pie-exp"></div></div><div class="pie-col"><div class="pie-lbl">收入分布 ('+lb+')</div><div id="pie-inc"></div></div></div>';var tex=fil.filter(function(r){return r.type==='expense'}).reduce(function(s,r){return s+Number(r.amount)},0);var tin=fil.filter(function(r){return r.type==='income'}).reduce(function(s,r){return s+Number(r.amount)},0);h+='<div class="card" style="margin-top:10px"><div style="font-size:13px;font-weight:bold;margin-bottom:8px">汇总</div><div style="display:flex;justify-content:space-between;padding:5px 0"><span>支出</span><span style="color:var(--red);font-weight:bold">-¥'+fmtY(tex)+'</span></div><div style="display:flex;justify-content:space-between;padding:5px 0"><span>收入</span><span style="color:var(--green);font-weight:bold">+¥'+fmtY(tin)+'</span></div><div style="display:flex;justify-content:space-between;padding:5px 0;border-top:1px solid #eee;margin-top:4px;padding-top:9px"><span>结余</span><span style="font-weight:bold;color:'+(tin-tex>=0?'var(--green)':'var(--red)')+'">¥'+fmtY(tin-tex)+'</span></div></div>';P('pg-report').innerHTML=h;setTimeout(function(){drawConic('pie-exp',fil,'expense');drawConic('pie-inc',fil,'income')},60)}catch(e){P('pg-report').innerHTML='<div class="empty"><p>加载失败</p></div>'}}
+
+function renderMy(){try{var bud=getBudget().find(function(b){return b.user===curU.id});var bAmt=bud?Number(bud.amount):0;var h='<div class="card"><div style="font-size:13px;font-weight:bold;margin-bottom:8px;display:flex;justify-content:space-between"><span>💰 账户管理</span><span style="font-size:12px;color:var(--green);cursor:pointer" onclick="openAccForm()">+ 新增</span></div>';var as=getAccounts();as.forEach(function(a){var bl=accBal(a.id);h+='<div class="acc-row"><div class="acc-ic" style="background:'+a.color+'18;color:'+a.color+'">'+a.icon+'</div><div class="acc-mid"><div class="acc-name">'+a.name+'</div><div class="acc-bal">余额 ¥'+fmtY(bl)+'</div></div><span class="acc-ed" onclick="openAccForm(\''+a.id+'\')">编辑</span>'+(as.length>1?'<span class="acc-dl" onclick="doDelAcc(\''+a.id+'\')">删除</span>':'')+'</div>'});h+='</div><div class="card"><div style="font-size:13px;font-weight:bold;margin-bottom:8px">🎯 月度预算</div><div class="bd-form"><input type="number" id="budInput" placeholder="设置月度预算" value="'+(bAmt||'')+'" step="0.01" min="0"><button class="bd-save" onclick="doSaveBud()">保存</button></div></div><div class="card"><div class="set-item" onclick="doExport()"><div class="si-l"><span class="si-ic">📥</span><span class="si-tx">导出数据</span></div><span class="si-arr">›</span></div><div class="set-item" onclick="doImport()"><div class="si-l"><span class="si-ic">📤</span><span class="si-tx">导入数据</span></div><span class="si-arr">›</span></div></div><div class="card"><div class="set-item" onclick="doLogout()"><div class="si-l"><span class="si-ic">🚪</span><span class="si-tx" style="color:var(--red)">退出登录</span></div><span class="si-arr">›</span></div></div><div style="text-align:center;padding:12px;font-size:11px;color:var(--sub)">记账本 V3 · 数据存储在本地浏览器</div>';P('pg-my').innerHTML=h}catch(e){P('pg-my').innerHTML='<div class="empty"><p>加载失败</p></div>'}}
+
+function doSaveBud(){try{var v=Number(P('budInput').value);if(!v||v<=0){toast('请输入有效金额');return}saveBudget({user:curU.id,amount:v});toast('预算已保存');renderHome();renderMy()}catch(e){toast('保存失败')}}
+function doExport(){try{var d={records:myRecs(),cats:getCats().filter(function(c){return c.isCustom}),accounts:getAccounts(),budget:getBudget().filter(function(b){return b.user===curU.id})};var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='expense-backup-'+fmtD(new Date())+'.json';a.click();URL.revokeObjectURL(a.href);toast('导出成功')}catch(e){toast('导出失败')}}
+function doImport(){try{var inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=function(e){try{var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(ev){try{var d=JSON.parse(ev.target.result);if(d.records){var ex=getRecords();d.records.forEach(function(r){if(r.user!==curU.id)r.user=curU.id;if(!ex.find(function(x){return x.id===r.id}))ex.unshift(r)});setItem('et_records',ex)}if(d.cats){var cs=getCats();d.cats.forEach(function(c){if(!cs.find(function(x){return x.id===c.id}))cs.push(c)});setItem('et_cats',cs)}if(d.accounts){var as=getAccounts();d.accounts.forEach(function(a){if(!as.find(function(x){return x.id===a.id}))as.push(a)});setItem('et_accounts',as)}if(d.budget){d.budget.forEach(function(b){saveBudget(b)})}toast('导入成功');refreshAll()}catch(err){toast('文件格式错误')}};r.readAsText(f)}catch(err2){}};inp.click()}catch(e){toast('导入失败')}}
+function doLogout(){try{if(!confirm('确定退出登录？'))return;curU=null;setItem('et_lastUser','');renderLogin()}catch(e){}}
+
+function openAccForm(id){try{editAcc=id||null;var a=id?getAccounts().find(function(x){return x.id===id}):null;var h='<div class="modal show" id="accMod" onclick="closeAccMod(event)"><div onclick="event.stopPropagation()"><div class="m-hd">'+(a?'编辑账户':'新增账户')+'</div><div class="fg"><label>图标</label><input id="accIc" value="'+(a?a.icon:'💰')+'" placeholder="emoji图标"></div><div class="fg"><label>名称</label><input id="accNm" value="'+(a?a.name:'')+'" placeholder="账户名称"></div><div class="fg"><label>颜色</label><input id="accCl" value="'+(a?a.color:'#1677ff')+'" placeholder="#1677ff"></div><button class="btn-save" onclick="doSaveAcc()">保存</button></div></div>';var o=P('accMod');if(o)o.remove();P('app').insertAdjacentHTML('beforeend',h)}catch(e){}}
+function closeAccMod(e){try{if(e&&e.target!==P('accMod'))return;var m=P('accMod');if(m)m.remove();editAcc=null}catch(e){}}
+function doSaveAcc(){try{var ic=P('accIc').value.trim()||'💰';var nm=P('accNm').value.trim();var cl=P('accCl').value.trim()||'#1677ff';if(!nm){toast('请输入账户名称');return}if(editAcc){var as=getAccounts();var a=as.find(function(x){return x.id===editAcc});if(a){a.icon=ic;a.name=nm;a.color=cl;saveAccount(a)}}else{saveAccount({id:uid(),icon:ic,name:nm,color:cl})}closeAccMod(null);renderMy();toast('账户已保存')}catch(e){toast('保存失败')}}
+function doDelAcc(id){try{var as=getAccounts();if(as.length<=1){toast('至少保留一个账户');return}if(!confirm('确认删除该账户？'))return;deleteAccount(id);renderMy();toast('已删除')}catch(e){}}
+
+function openRecForm(id){try{editId=id||null;var r=id?getRecords().find(function(x){return x.id===id}):null;fType=r?r.type:'expense';fCat=r?r.category:'';fDate=r?r.date:fmtD(new Date());fAcc=r?r.account:(getAccounts().length>0?getAccounts()[0].id:'');fAmt=r?r.amount:'';var h='<div class="modal show" id="recMod" onclick="closeRecMod(event)"><div onclick="event.stopPropagation()" style="max-height:90vh;overflow-y:auto"><div class="m-hd">'+(r?'编辑记录':'记一笔')+'</div><div class="ty-row"><div class="ty-btn'+(fType==='expense'?' ex-sel':'')+'" onclick="fType=\'expense\';renderFBody()">支出</div><div class="ty-btn'+(fType==='income'?' in-sel':'')+'" onclick="fType=\'income\';renderFBody()">收入</div></div><div id="fBody"></div></div></div>';var o=P('recMod');if(o)o.remove();P('app').insertAdjacentHTML('beforeend',h);renderFBody()}catch(e){toast('打开失败')}}
+function closeRecMod(e){try{if(e&&e.target!==P('recMod'))return;var m=P('recMod');if(m)m.remove();editId=null}catch(e){}}
+
+function renderFBody(){try{var h='<div class="fg"><label>金额</label><div class="amt-wrap"><input type="number" id="fAmtInp" value="'+es(fAmt)+'" step="0.01" min="0.01" placeholder="0.00" oninput="fAmt=this.value"><div class="qbtns"><span class="qbtn" onclick="addAmt(100)">x100</span><span class="qbtn" onclick="addAmt(1000)">x1000</span></div></div></div>';var lu=getLastUsed();if(lu.length>0){h+='<div class="fg"><label>最近使用</label><div class="recent-r">';lu.forEach(function(cid){var c=catById(cid);if(c&&c.type===fType)h+='<div class="rc-it" style="'+(fCat===cid?'border-color:var(--green);background:#f0f7f0':'')+'" onclick="fCat=\''+cid+'\';renderFBody()"><span class="rc-ic">'+c.emoji+'</span>'+c.name+'</div>'});h+='</div></div>'}var cats=getCats().filter(function(c){return c.type===fType});h+='<div class="fg"><label>分类</label><div class="cat-m">';cats.forEach(function(c){h+='<div class="ci'+(fCat===c.id?' sel':'')+'" onclick="fCat=\''+c.id+'\';renderFBody()"><span class="ci-ic">'+c.emoji+'</span><span class="ci-nm">'+c.name+'</span></div>'});h+='<div class="ci add" onclick="addCatPrompt()"><span class="ci-ic">+</span><span class="ci-nm">自定义</span></div></div></div>';var as=getAccounts();h+='<div class="fg"><label>账户</label><select id="fAccSel" onchange="fAcc=this.value" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:#fafafa">';as.forEach(function(a){h+='<option value="'+a.id+'"'+(fAcc===a.id?' selected':'')+'>'+a.icon+' '+a.name+'</option>'});h+='</select></div>';var td=fmtD(new Date()),yd=fmtD(new Date(Date.now()-86400000));h+='<div class="fg"><label>日期</label><div class="date-chips"><span class="dchip'+(fDate===td?' on':'')+'" onclick="fDate=\''+td+'\';renderFBody()">今天</span><span class="dchip'+(fDate===yd?' on':'')+'" onclick="fDate=\''+yd+'\';renderFBody()">昨天</span></div><input type="date" id="fDateInp" value="'+fDate+'" onchange="fDate=this.value" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:#fafafa"></div>';var note=editId?((getRecords().find(function(x){return x.id===editId})||{}).note||''):'';h+='<div class="fg"><label>备注</label><input id="fNoteInp" value="'+es(note)+'" placeholder="添加备注" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-size:14px;outline:none;background:#fafafa"></div>';h+='<button class="btn-save" onclick="doSaveRec()">保存</button>';if(editId)h+='<button class="btn-save danger" onclick="doDelRecInForm()">删除此记录</button>';P('fBody').innerHTML=h}catch(e){}}
+function addAmt(n){try{var v=parseFloat(fAmt)||0;fAmt=String(v*n);var inp=P('fAmtInp');if(inp)inp.value=fAmt}catch(e){}}
+function addCatPrompt(){try{var n=prompt('输入自定义分类名称：');if(!n||!n.trim())return;var e=prompt('输入emoji图标：','📝');if(!e)e='📝';saveCat({id:uid(),name:n.trim(),emoji:e,type:fType,isCustom:true});renderFBody()}catch(e){}}
+function doSaveRec(){try{var amt=parseFloat(P('fAmtInp').value);if(isNaN(amt)||amt<=0){toast('请输入有效金额');return}if(!fCat){toast('请选择分类');return}fAcc=P('fAccSel').value;fDate=P('fDateInp').value;var note=P('fNoteInp').value.trim();var rec;if(editId){rec=getRecords().find(function(x){return x.id===editId});if(!rec){toast('记录不存在');return};rec.amount=amt.toFixed(2);rec.type=fType;rec.category=fCat;rec.account=fAcc;rec.date=fDate;rec.note=note}else{rec={id:uid(),amount:amt.toFixed(2),type:fType,category:fCat,account:fAcc,date:fDate,note:note,user:curU.id,created:Date.now()}}saveRecord(rec);setLastUsed(fCat);closeRecMod(null);var mon=fmtM();var ms=myRecs().filter(function(r){return r.date&&r.date.startsWith(mon)});var ex=ms.filter(function(r){return r.type==='expense'}).reduce(function(s,r){return s+Number(r.amount)},0);var bud=getBudget().find(function(b){return b.user===curU.id});var ba=bud?Number(bud.amount):0;if(ba>0){var lf=ba-ex;toast('本月已花 ¥'+fmtY(ex)+'，还剩 ¥'+(lf>0?fmtY(lf):'0.00'))}else{toast('记账成功！本月支出 ¥'+fmtY(ex))}refreshAll()}catch(e){toast('保存失败')}}
+function doDelRecInForm(){try{if(!editId)return;if(!confirm('确认删除？'))return;deleteRecord(editId);closeRecMod(null);refreshAll();toast('已删除')}catch(e){}}
+
+var lp=getItem('et_lastUser');
+if(lp){var us=getUsers();var u=us.find(function(x){return x.phone===lp});if(u){curU=u;renderApp()}else{renderLogin()}}
+else{renderLogin()}
+})();
+</script>
+</body>
+</html>
